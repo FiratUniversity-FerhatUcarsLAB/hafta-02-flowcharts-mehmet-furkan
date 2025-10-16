@@ -1,0 +1,80 @@
+digraph EcommerceFlow {
+    // Grafik ayarları
+    rankdir=TB;
+    node [shape=box, style=rounded, fontname="Helvetica"];
+    edge [fontname="Helvetica"];
+
+    // Düğüm (Node) Tanımları
+    start [label="Başla", shape=ellipse, style=filled, fillcolor=lightblue];
+    login_check [label="Kullanıcı Girişi Yapılmış mı?", shape=diamond, style=filled, fillcolor=lightyellow];
+    go_to_login [label="Giriş Sayfasına Yönlendir"];
+    browse_products [label="1. Ürün Kategorilerinde Gezin"];
+    stock_check [label="2. Ürün Stokta Var mı?", shape=diamond, style=filled, fillcolor=lightyellow];
+    add_to_cart [label="Ürünü Sepete Ekle"];
+    stock_out_warning [label="Uyarı: Ürün Stokta Yok"];
+    continue_shopping_prompt [label="3. Alışverişe Devam mı?", shape=diamond, style=filled, fillcolor=lightyellow];
+    manage_cart [label="4. Sepeti Görüntüle ve Düzenle"];
+    checkout_decision [label="Siparişi Tamamla?", shape=diamond, style=filled, fillcolor=lightyellow];
+    
+    // Ödeme süreci düğümleri
+    apply_discount_prompt [label="5. İndirim Kodu Uygula", shape=diamond, style=filled, fillcolor=lightyellow];
+    apply_discount [label="İndirimi Uygula"];
+    min_amount_check [label="6. Sepet Toplamı >= 50 TL mi?", shape=diamond, style=filled, fillcolor=lightyellow];
+    min_amount_warning [label="Uyarı: Minimum Tutar Sağlanmadı"];
+    shipping_calc [label="7. Sepet Toplamı >= 200 TL mi?", shape=diamond, style=filled, fillcolor=lightyellow];
+    free_shipping [label="Kargoyu Ücretsiz Yap"];
+    standard_shipping [label="Standart Kargo Ücreti Ekle"];
+    select_payment [label="8. Ödeme Yöntemi Seç"];
+    confirm_order_prompt [label="9. Siparişi Onayla?", shape=diamond, style=filled, fillcolor=lightyellow];
+    process_order [label="Ödemeyi Gerçekleştir\nSiparişi Kaydet\nStoğu Güncelle"];
+    order_success [label="Sipariş Başarıyla Alındı"];
+    
+    // Bitiş Düğümleri
+    end [label="Bitir", shape=ellipse, style=filled, fillcolor=lightblue];
+    end_login [label="Bitir", shape=ellipse, style=filled, fillcolor=lightblue];
+
+
+    // Akış (Edge) Tanımları
+    start -> login_check;
+    login_check -> browse_products [label=" EVET "];
+    login_check -> go_to_login [label=" HAYIR "];
+    go_to_login -> end_login;
+    
+    // Ürün Ekleme Döngüsü
+    browse_products -> stock_check;
+    stock_check -> add_to_cart [label=" EVET "];
+    stock_check -> stock_out_warning [label=" HAYIR "];
+    stock_out_warning -> continue_shopping_prompt;
+    add_to_cart -> continue_shopping_prompt;
+    
+    // Sepet veya Alışverişe Devam Kararı
+    continue_shopping_prompt -> browse_products [label=" EVET (Devam Et)"];
+    continue_shopping_prompt -> manage_cart [label=" HAYIR (Sepete Git)"];
+    
+    // Sepet Yönetimi Döngüsü
+    manage_cart -> checkout_decision;
+    checkout_decision -> apply_discount_prompt [label=" EVET "];
+    checkout_decision -> manage_cart [label=" HAYIR (Düzenle)"];
+
+    // Ödeme Akışı
+    apply_discount_prompt -> apply_discount [label=" EVET (Kod Geçerli)"];
+    apply_discount_prompt -> min_amount_check [label=" HAYIR (Kod Yok/Geçersiz)"];
+    apply_discount -> min_amount_check;
+    
+    min_amount_check -> shipping_calc [label=" EVET "];
+    min_amount_check -> min_amount_warning [label=" HAYIR "];
+    min_amount_warning -> end;
+    
+    shipping_calc -> free_shipping [label=" EVET "];
+    shipping_calc -> standard_shipping [label=" HAYIR "];
+    
+    free_shipping -> select_payment;
+    standard_shipping -> select_payment;
+    
+    select_payment -> confirm_order_prompt;
+    confirm_order_prompt -> process_order [label=" EVET "];
+    confirm_order_prompt -> manage_cart [label=" HAYIR (İptal)"];
+    
+    process_order -> order_success;
+    order_success -> end;
+}
