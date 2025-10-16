@@ -1,0 +1,70 @@
+digraph DersKayitSistemi {
+    // Grafik ayarları
+    rankdir=TB;
+    splines=ortho;
+    node [shape=box, style=rounded, fontname="Arial"];
+    edge [fontname="Arial", fontsize=10];
+
+    // Ana Süreç Adımları
+    start [label="Başla", shape=ellipse, style=filled, fillcolor=lightblue];
+    giris [label="Öğrenci Girişi\n(Öğrenci No + Şifre)"];
+    ders_listele [label="Ders Listesini Görüntüle"];
+    ders_secim_dongusu [label="Ders Ekleme/Çıkarma Döngüsü", shape=box3d];
+    ders_ekle [label="Kullanıcı 'Ders Ekle' seçer"];
+    kayit_ozeti [label="Kayıt Özeti Göster"];
+    kayit_onayla [label="KAYIT ONAYLANDI", shape=ellipse, style=filled, fillcolor=lightgreen];
+    cikis [label="Sistemden Çıkış", shape=ellipse, style=filled, fillcolor=gray];
+
+    // Kontrol Noktaları (Karar)
+    kredi_limiti_kontrol [label="Toplam Kredi <= 35 ?", shape=diamond];
+    kontenjan_kontrol [label="Kontenjan Var mı?", shape=diamond];
+    on_kosul_kontrol [label="Ön Koşul Sağlandı mı?", shape=diamond];
+    cakisma_kontrol [label="Zaman Çakışması Var mı?", shape=diamond];
+    danisman_onay_kontrol [label="GPA < 2.5 ?", shape=diamond];
+    
+    // Hata Durumları
+    hata_kredi [label="HATA:\nKredi Limiti Aşıldı", style=filled, fillcolor=lightcoral];
+    hata_kontenjan [label="HATA:\nKontenjan Dolu", style=filled, fillcolor=lightcoral];
+    hata_on_kosul [label="HATA:\nÖn Koşul Sağlanmadı", style=filled, fillcolor=lightcoral];
+    hata_cakisma [label="HATA:\nZaman Çakışması", style=filled, fillcolor=lightcoral];
+    
+    // Danışman Onayı Durumu
+    danisman_onayina_gonder [label="Kayıt Danışman\nOnayına Gönderilir"];
+
+    // Akış Bağlantıları
+    start -> giris;
+    giris -> ders_listele;
+    ders_listele -> ders_secim_dongusu;
+    
+    ders_secim_dongusu -> ders_ekle [label="Kullanıcı Seçimi"];
+    ders_ekle -> kredi_limiti_kontrol;
+
+    // Kontrol Akışları
+    kredi_limiti_kontrol -> kontenjan_kontrol [label="Evet"];
+    kredi_limiti_kontrol -> hata_kredi [label="Hayır"];
+    hata_kredi -> ders_secim_dongusu [label="Döngüye geri dön"];
+    
+    kontenjan_kontrol -> on_kosul_kontrol [label="Evet"];
+    kontenjan_kontrol -> hata_kontenjan [label="Hayır"];
+    hata_kontenjan -> ders_secim_dongusu [label="Döngüye geri dön"];
+
+    on_kosul_kontrol -> cakisma_kontrol [label="Evet"];
+    on_kosul_kontrol -> hata_on_kosul [label="Hayır"];
+    hata_on_kosul -> ders_secim_dongusu [label="Döngüye geri dön"];
+
+    cakisma_kontrol -> ders_secim_dongusu [label="Evet (Çakışma Var)"];
+    cakisma_kontrol -> ders_secim_dongusu [label="Hayır (Ders Eklenir)\n[Çakışma Yok]", arrowhead=open, style=dashed, constraint=false];
+    hata_cakisma -> ders_secim_dongusu [label="Döngüye geri dön"];
+    cakisma_kontrol -> hata_cakisma [label="Evet"];
+    
+    // Kayıt Bitirme Akışı
+    ders_secim_dongusu -> kayit_ozeti [label="'Kaydı Bitir' Seçimi"];
+    kayit_ozeti -> danisman_onay_kontrol;
+    
+    danisman_onay_kontrol -> danisman_onayina_gonder [label="Evet"];
+    danisman_onayina_gonder -> kayit_onayla;
+    
+    danisman_onay_kontrol -> kayit_onayla [label="Hayır"];
+    
+    kayit_onayla -> cikis;
+}
