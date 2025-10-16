@@ -1,0 +1,105 @@
+digraph HastaneSistemi {
+    // Genel Graf Ayarları
+    graph [fontname="Helvetica", fontsize=12, label="Hastane Randevu ve Tahlil Sistemi Akış Diyagramı", labelloc=t, splines=ortho];
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, fillcolor="#EFEFEF"];
+    edge [fontname="Helvetica", fontsize=9];
+
+    // Düğüm Şekilleri
+    node [shape=ellipse, fillcolor="#B0E0E6"] Start End;
+    node [shape=parallelogram, fillcolor="#FFFACD"] MainMenu_IO R_Input_TCKN R_Select_Pol R_Select_Doc R_Show_Hours T_Input_TCKN T_Show_Results;
+    node [shape=diamond, fillcolor="#FFDAB9"] Menu_Decision R_Auth_Decision R_Confirm_Appt R_Try_Again T_Auth_Decision T_Check_Lab_Exists T_Check_Result_Ready T_Ask_PDF Continue_Decision;
+
+    // Ana Menü Subgraph'ı
+    subgraph cluster_MainMenu {
+        label = "Ana Menü";
+        style = "filled";
+        color = "lightgrey";
+
+        Start -> MainMenu_IO [label="Sistemi Başlat"];
+        MainMenu_IO [label="Hoş Geldiniz!\n1- Randevu Al\n2- Tahlil Sonucu Görüntüle\nLütfen işlem seçiniz:"];
+        MainMenu_IO -> Menu_Decision;
+        Menu_Decision [label="İşlem Seçimi"];
+        
+        Continue_IO [shape=parallelogram, label="Başka bir işlem yapmak\nister misiniz?"];
+        Continue_Decision [label="Devam Edilsin mi?"];
+        Continue_IO -> Continue_Decision;
+        
+        Continue_Decision -> MainMenu_IO [label="Evet"];
+        Continue_Decision -> End [label="Hayır"];
+        
+        Invalid_Selection [label="Geçersiz Seçim Yaptınız."];
+        Menu_Decision -> Invalid_Selection [label="Geçersiz"];
+        Invalid_Selection -> Continue_IO;
+    }
+
+    // Randevu Modülü Subgraph'ı
+    subgraph cluster_RandevuModulu {
+        label = "Randevu Alma Modülü";
+        
+        R_Input_TCKN [label="TC Kimlik No Gir"];
+        R_Auth_Decision [label="Kimlik Doğru mu?"];
+        R_Auth_Fail [label="Kimlik Doğrulama Başarısız!", fillcolor="#FFCCCB"];
+        R_Select_Pol [label="Poliklinik Seç"];
+        R_Select_Doc [label="Doktor Seç"];
+        R_Show_Hours [label="Uygun Saatleri Göster\nve Saat Seç"];
+        R_Confirm_Appt [label="Randevuyu Onayla?"];
+        R_Save_Appt [label="Randevuyu Kaydet"];
+        R_Send_SMS [label="SMS Gönder"];
+        R_Appt_Success [label="Randevu Başarıyla Oluşturuldu", fillcolor="#90EE90"];
+        R_Try_Again [label="Başka Saat Seçilsin mi?"];
+
+        R_Input_TCKN -> R_Auth_Decision;
+        R_Auth_Decision -> R_Select_Pol [label="Başarılı"];
+        R_Auth_Decision -> R_Auth_Fail [label="Başarısız"];
+        R_Auth_Fail -> Continue_IO;
+        R_Select_Pol -> R_Select_Doc;
+        R_Select_Doc -> R_Show_Hours;
+        R_Show_Hours -> R_Confirm_Appt;
+        R_Confirm_Appt -> R_Save_Appt [label="Evet"];
+        R_Save_Appt -> R_Send_SMS;
+        R_Send_SMS -> R_Appt_Success;
+        R_Appt_Success -> Continue_IO;
+        
+        R_Confirm_Appt -> R_Try_Again [label="Hayır"];
+        R_Try_Again -> R_Show_Hours [label="Evet"];
+        R_Try_Again -> Continue_IO [label="Hayır"];
+    }
+
+    // Tahlil Modülü Subgraph'ı
+    subgraph cluster_TahlilModulu {
+        label = "Tahlil Sonucu Görüntüleme Modülü";
+
+        T_Input_TCKN [label="TC Kimlik No Gir"];
+        T_Auth_Decision [label="Kimlik Doğru mu?"];
+        T_Auth_Fail [label="Kimlik Doğrulama Başarısız!", fillcolor="#FFCCCB"];
+        T_Check_Lab_Exists [label="Tahlil Var mı?"];
+        T_No_Lab [label="Kayıtlı Tahlil Bulunmuyor"];
+        T_Check_Result_Ready [label="Sonuç Hazır mı?"];
+        T_Result_Not_Ready [label="Sonuçlar Henüz Hazır Değil"];
+        T_Show_Results [label="Tahlil Sonuçlarını Görüntüle"];
+        T_Ask_PDF [label="PDF İndirilsin mi?"];
+        T_Download_PDF [label="PDF İndir"];
+
+        T_Input_TCKN -> T_Auth_Decision;
+        T_Auth_Decision -> T_Check_Lab_Exists [label="Başarılı"];
+        T_Auth_Decision -> T_Auth_Fail [label="Başarısız"];
+        T_Auth_Fail -> Continue_IO;
+        
+        T_Check_Lab_Exists -> T_Check_Result_Ready [label="Evet"];
+        T_Check_Lab_Exists -> T_No_Lab [label="Hayır"];
+        T_No_Lab -> Continue_IO;
+
+        T_Check_Result_Ready -> T_Show_Results [label="Evet"];
+        T_Check_Result_Ready -> T_Result_Not_Ready [label="Hayır"];
+        T_Result_Not_Ready -> Continue_IO;
+
+        T_Show_Results -> T_Ask_PDF;
+        T_Ask_PDF -> T_Download_PDF [label="Evet"];
+        T_Download_PDF -> Continue_IO;
+        T_Ask_PDF -> Continue_IO [label="Hayır"];
+    }
+
+    // Ana Menü ve Modül Bağlantıları
+    Menu_Decision -> R_Input_TCKN [label="1- Randevu Al"];
+    Menu_Decision -> T_Input_TCKN [label="2- Tahlil Sonucu"];
+}
