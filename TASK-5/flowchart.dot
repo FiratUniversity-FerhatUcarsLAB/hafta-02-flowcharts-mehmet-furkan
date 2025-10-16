@@ -1,0 +1,57 @@
+digraph AkilliEvGuvenlikSistemi {
+    // Grafik ayarları: Yukarıdan aşağıya akış ve varsayılan şekiller
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fillcolor="#EFEFEF", fontname="Helvetica"];
+    edge [fontname="Helvetica"];
+
+    // Başlangıç Düğümü
+    Baslangic [label="Sistemi Başlat / Değişkenleri Ayarla", shape=ellipse, fillcolor="#C2DFFF"];
+
+    // Ana Süreç ve Karar Düğümleri
+    Sistem_Aktif_Mi [label="Sistem Aktif mi?", shape=diamond, fillcolor="#FFDDC1"];
+    Sensorleri_Oku [label="1. Tüm Sensörleri Oku\n(Hareket, Kapı/Pencere, Konum)"];
+    Tehdit_Var_Mi [label="Tehdit Var mı?\n(Ev Sahibi Dışarıda VE Sensör Tetiklendi)", shape=diamond, fillcolor="#FFDDC1"];
+    Tehdit_Seviyesi_Belirle [label="2. Tehdit Seviyesini Belirle\nve Alarm Durumunu AKTİF Yap"];
+    Tehdit_Seviyesi_Kontrolu [label="Tehdit Seviyesi Nedir?", shape=diamond, fillcolor="#FFDDC1"];
+
+    // Aksiyon Düğümleri
+    Aksiyon_Dusuk [label="Bildirim Gönder (App)", shape=box, fillcolor="#FFFACD"];
+    Aksiyon_Orta [label="Kamerayı Aktif Et\nDüşük Seviye Alarm Çal\nBildirim Gönder (App, SMS)", shape=box, fillcolor="#FFE4B5"];
+    Aksiyon_Yuksek [label="Kamerayı Aktif Et\nYüksek Seviye Alarm Çal\nBildirim Gönder (App, SMS, Email)", shape=box, fillcolor="#FFC0CB"];
+    
+    // Alarm Sıfırlama Döngüsü
+    Alarm_Sifirlama_Komutu_Geldi_Mi [label="Alarm Sıfırlama\nKomutu Geldi mi?", shape=diamond, fillcolor="#D1FFBD"];
+    Alarmi_Sifirla [label="Alarmi Sustur\nKamerayı Kapat\nAlarm Durumunu PASİF Yap"];
+    
+    // Döngü sonu bekleme
+    Bekle_Ana_Dongu [label="Bekle (periyodik kontrol için)"];
+
+    // Akış Bağlantıları
+    Baslangic -> Sistem_Aktif_Mi;
+    
+    Sistem_Aktif_Mi -> Sensorleri_Oku [label=" Evet"];
+    Sistem_Aktif_Mi -> Bekle_Ana_Dongu [label=" Hayır"];
+    
+    Sensorleri_Oku -> Tehdit_Var_Mi;
+    
+    Tehdit_Var_Mi -> Tehdit_Seviyesi_Belirle [label=" Evet"];
+    Tehdit_Var_Mi -> Bekle_Ana_Dongu [label=" Hayır"];
+    
+    Tehdit_Seviyesi_Belirle -> Tehdit_Seviyesi_Kontrolu;
+    
+    Tehdit_Seviyesi_Kontrolu -> Aksiyon_Dusuk [label=" 1: Düşük"];
+    Tehdit_Seviyesi_Kontrolu -> Aksiyon_Orta [label=" 2: Orta"];
+    Tehdit_Seviyesi_Kontrolu -> Aksiyon_Yuksek [label=" 3: Yüksek"];
+    
+    // Aksiyonlardan sonra alarm sıfırlama kontrolüne geçiş
+    {Aksiyon_Dusuk, Aksiyon_Orta, Aksiyon_Yuksek} -> Alarm_Sifirlama_Komutu_Geldi_Mi;
+    
+    // Alarm sıfırlama iç döngüsü
+    Alarm_Sifirlama_Komutu_Geldi_Mi -> Alarmi_Sifirla [label=" Evet"];
+    Alarm_Sifirlama_Komutu_Geldi_Mi -> Alarm_Sifirlama_Komutu_Geldi_Mi [label=" Hayır, Bekle"]; // Kendi üzerine dönen ok
+    
+    Alarmi_Sifirla -> Bekle_Ana_Dongu;
+    
+    // ANA DÖNGÜ: Sondan başa geri ok
+    Bekle_Ana_Dongu -> Sistem_Aktif_Mi [label=" Sürekli", style=dashed, color=blue, arrowhead=normal, dir=back];
+}
