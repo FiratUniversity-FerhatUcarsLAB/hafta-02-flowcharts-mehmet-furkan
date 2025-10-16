@@ -1,0 +1,102 @@
+digraph ATM_Para_Cekme_Sistemi {
+    // Grafik ayarları
+    rankdir=TB;
+    charset="UTF-8";
+    node [fontname="Helvetica", style=filled, fillcolor="#F2F2F2"];
+    edge [fontname="Helvetica"];
+
+    // Node Tanımlamaları (Şekillere Göre)
+    // Oval: Başla / Bitir
+    start [label="BAŞLA", shape=oval, fillcolor="#C8E6C9"];
+    end [label="BİTİR", shape=oval, fillcolor="#FFCDD2"];
+
+    // Parallelogram: Girdi / Çıktı (OKU/YAZ)
+    hosgeldiniz_mesaji [label="YAZ: 'Hoş geldiniz! Lütfen PIN kodunuzu giriniz.'", shape=parallelogram];
+    pin_oku [label="YAZ: 'PIN:'\nOKU: girilenPIN", shape=parallelogram];
+    hatali_pin_mesaji [label="YAZ: 'Hatalı PIN. Kalan deneme hakkınız...'", shape=parallelogram];
+    bloke_mesaji [label="YAZ: '3 kez hatalı giriş yaptınız. Kartınız bloke edilmiştir.'", shape=parallelogram];
+    bakiye_goster_ve_tutar_iste [label="YAZ: 'Mevcut Bakiyeniz: ... TL'\nYAZ: 'Kalan Günlük Limitiniz: ... TL'\nYAZ: 'Lütfen çekmek istediğiniz tutarı giriniz:'\nOKU: cekilecekTutar", shape=parallelogram];
+    hata_mesaji_20tl [label="YAZ: 'HATA: Girilen tutar 20 TL ve katları olmalıdır.'", shape=parallelogram];
+    hata_mesaji_bakiye [label="YAZ: 'HATA: Yetersiz bakiye.'", shape=parallelogram];
+    hata_mesaji_limit [label="YAZ: 'HATA: Günlük para çekme limitinizi aşıyorsunuz.'", shape=parallelogram];
+    basarili_islem_mesaji [label="YAZ: 'İşlem başarılı. Lütfen paranızı alınız.'\nYAZ: 'Yeni Bakiyeniz: ... TL'", shape=parallelogram];
+    fis_sor_oku [label="YAZ: 'Fiş almak ister misiniz? (E/H)'\nOKU: fisCevap", shape=parallelogram];
+    fis_yazdir [label="YAZ: 'Fişiniz yazdırılıyor.'", shape=parallelogram];
+    baska_islem_sor [label="YAZ: 'Başka bir işlem yapmak ister misiniz? (E/H)'\nOKU: devamEt", shape=parallelogram];
+    cikis_mesaji [label="YAZ: 'İyi günler dileriz. Kartınızı almayı unutmayınız.'", shape=parallelogram];
+
+    // Box: İşlem
+    degisken_tanimla [label="TANIMLA:\ndogruPIN, bakiye, gunlukLimit\npinHakki = 3\nkartBloke = YANLIS\npinDogrulandi = YANLIS", shape=box];
+    pin_dogrulandi_yap [label="pinDogrulandi = DOGRU", shape=box];
+    pin_hakki_azalt [label="pinHakki = pinHakki - 1", shape=box];
+    kart_bloke_yap [label="kartBloke = DOGRU", shape=box];
+    bakiye_guncelle [label="bakiye = bakiye - cekilecekTutar\ngunlukLimit = gunlukLimit - cekilecekTutar", shape=box];
+
+    // Diamond: Karar
+    pin_dongu_kontrol [label="pinHakki > 0?", shape=diamond, fillcolor="#BBDEFB"];
+    pin_kontrol [label="girilenPIN == dogruPIN?", shape=diamond, fillcolor="#BBDEFB"];
+    kalan_hak_kontrol [label="pinHakki > 0?", shape=diamond, fillcolor="#BBDEFB"];
+    islem_basla_kontrol [label="pinDogrulandi == DOGRU?", shape=diamond, fillcolor="#BBDEFB"];
+    tutar_kontrol_20tl [label="cekilecekTutar % 20 != 0?", shape=diamond, fillcolor="#BBDEFB"];
+    tutar_kontrol_bakiye [label="cekilecekTutar > bakiye?", shape=diamond, fillcolor="#BBDEFB"];
+    tutar_kontrol_limit [label="cekilecekTutar > gunlukLimit?", shape=diamond, fillcolor="#BBDEFB"];
+    fis_kontrol [label="fişCevap == 'E'?", shape=diamond, fillcolor="#BBDEFB"];
+    baska_islem_kontrol [label="devamEt == 'E'?", shape=diamond, fillcolor="#BBDEFB"];
+
+    // Akış Çizgileri (Oklar)
+    start -> degisken_tanimla;
+    degisken_tanimla -> hosgeldiniz_mesaji;
+    hosgeldiniz_mesaji -> pin_dongu_kontrol;
+
+    // PIN Döngüsü
+    pin_dongu_kontrol -> pin_oku [label="Evet"];
+    pin_oku -> pin_kontrol;
+    pin_kontrol -> pin_dogrulandi_yap [label="Doğru"];
+    pin_dogrulandi_yap -> islem_basla_kontrol;
+
+    pin_kontrol -> pin_hakki_azalt [label="Yanlış"];
+    pin_hakki_azalt -> kalan_hak_kontrol;
+    kalan_hak_kontrol -> hatali_pin_mesaji [label="Evet"];
+    hatali_pin_mesaji -> pin_dongu_kontrol; // Döngü başı
+    
+    kalan_hak_kontrol -> kart_bloke_yap [label="Hayır"];
+    kart_bloke_yap -> bloke_mesaji;
+    bloke_mesaji -> cikis_mesaji; // Kart bloke olunca direkt çıkışa git
+    pin_dongu_kontrol -> islem_basla_kontrol [label="Hayır"]; // Deneme hakkı biterse
+    
+    // Ana İşlem
+    islem_basla_kontrol -> bakiye_goster_ve_tutar_iste [label="Evet"];
+    islem_basla_kontrol -> cikis_mesaji [label="Hayır"];
+
+    // Tutar Kontrolleri
+    bakiye_goster_ve_tutar_iste -> tutar_kontrol_20tl;
+    tutar_kontrol_20tl -> hata_mesaji_20tl [label="Evet"];
+    tutar_kontrol_20tl -> tutar_kontrol_bakiye [label="Hayır"];
+    
+    tutar_kontrol_bakiye -> hata_mesaji_bakiye [label="Evet"];
+    tutar_kontrol_bakiye -> tutar_kontrol_limit [label="Hayır"];
+    
+    tutar_kontrol_limit -> hata_mesaji_limit [label="Evet"];
+    tutar_kontrol_limit -> bakiye_guncelle [label="Hayır"];
+
+    // Hata Mesajlarından Sonra Tekrar Soruya Yönlendirme
+    hata_mesaji_20tl -> baska_islem_sor;
+    hata_mesaji_bakiye -> baska_islem_sor;
+    hata_mesaji_limit -> baska_islem_sor;
+
+    // Başarılı İşlem Akışı
+    bakiye_guncelle -> basarili_islem_mesaji;
+    basarili_islem_mesaji -> fis_sor_oku;
+    fis_sor_oku -> fis_kontrol;
+    fis_kontrol -> fis_yazdir [label="Evet"];
+    fis_yazdir -> baska_islem_sor;
+    fis_kontrol -> baska_islem_sor [label="Hayır"];
+
+    // Başka İşlem Döngüsü
+    baska_islem_sor -> baska_islem_kontrol;
+    baska_islem_kontrol -> bakiye_goster_ve_tutar_iste [label="Evet"]; // Ana işlem döngüsü başı
+    baska_islem_kontrol -> cikis_mesaji [label="Hayır"];
+    
+    // Bitiş
+    cikis_mesaji -> end;
+}
